@@ -281,7 +281,6 @@ Examples:
 
 ## Data Model
 
-```md id="v1h7g0"
 ```mermaid
 erDiagram
     Household ||--o{ User : has
