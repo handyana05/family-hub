@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+enum CategoryType {
+  CALENDAR
+  SHOPPING
+  TODO
+}
+
+enum ShoppingItemStatus {
+  ACTIVE
+  DONE
+}
+
+enum TodoPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TodoStatus {
+  OPEN
+  DONE
+}
+
+model Household {
+  id         String         @id @default(cuid())
+  name       String
+  users      User[]
+  categories Category[]
+  notes      FamilyNote[]
+  events     CalendarEvent[]
+  items      ShoppingItem[]
+  todos      TodoItem[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+model User {
+  id              String          @id @default(cuid())
+  householdId     String
+  household       Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  name            String
+  email           String?         @unique
+  passwordHash    String?
+  color           String?
+  role            UserRole        @default(MEMBER)
+
+  createdEvents   CalendarEvent[] @relation("EventCreatedBy")
+  assignedEvents  CalendarEvent[] @relation("EventAssignedTo")
+  shoppingItems   ShoppingItem[]  @relation("ShoppingAddedBy")
+  assignedTodos   TodoItem[]      @relation("TodoAssignedTo")
+  createdTodos    TodoItem[]      @relation("TodoCreatedBy")
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([householdId])
+}
+
+model Category {
+  id          String       @id @default(cuid())
+  householdId String
+  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  name        String
+  type        CategoryType
+  color       String?
+  icon        String?
+
+  events      CalendarEvent[]
+  items       ShoppingItem[]
+  todos       TodoItem[]
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([householdId, type])
+}
+
+model CalendarEvent {
+  id           String     @id @default(cuid())
+  householdId  String
+  household    Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  title        String
+  description  String?
+  startAt      DateTime
+  endAt        DateTime?
+  allDay       Boolean    @default(false)
+
+  categoryId   String?
+  category     Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  createdById  String
+  createdBy    User       @relation("EventCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  assignedToId String?
+  assignedTo   User?      @relation("EventAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([householdId, startAt])
+}
+
+model ShoppingItem {
+  id           String             @id @default(cuid())
+  householdId  String
+  household    Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  name         String
+  quantity     String?
+  notes        String?
+
+  categoryId   String?
+  category     Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  status       ShoppingItemStatus @default(ACTIVE)
+
+  addedById    String
+  addedBy      User               @relation("ShoppingAddedBy", fields: [addedById], references: [id], onDelete: Restrict)
+
+  completedAt  DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([householdId, status, createdAt])
+}
+
+model TodoItem {
+  id           String       @id @default(cuid())
+  householdId  String
+  household    Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  title        String
+  notes        String?
+  priority     TodoPriority @default(MEDIUM)
+  dueAt        DateTime?
+  status       TodoStatus   @default(OPEN)
+
+  categoryId   String?
+  category     Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  assignedToId String?
+  assignedTo   User?        @relation("TodoAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  createdById  String
+  createdBy    User         @relation("TodoCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  completedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([householdId, status, dueAt])
+}
+
+model FamilyNote {
+  id           String     @id @default(cuid())
+  householdId  String
+  household    Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  title        String
+  content      String
+  pinned       Boolean    @default(false)
+  expiresAt    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([householdId, pinned, updatedAt])
+}

@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: familyhub
+      POSTGRES_USER: familyhub
+      POSTGRES_PASSWORD: familyhub
+    ports:
+      - "5432:5432"
+    volumes:
+      - familyhub_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  familyhub_postgres_data:
