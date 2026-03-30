@@ -1,101 +1,114 @@
 import { format } from "date-fns";
 import { requireUser } from "@/lib/auth";
-import { getDashboardData } from "@/lib/services/dashboard-service";
+import { getViewFromParam, parseDateParam, formatDateParam } from "@/lib/date";
+import { getTheme } from "@/lib/theme";
+import { ThemeToggleIcon } from "@/components/theme-toggle-icon";
+import {
+  getWallDayViewData,
+  getWallMonthViewData,
+  getWallWeekViewData,
+} from "@/lib/services/wall-service";
+import { WallToolbar } from "./components/wall-toolbar";
+import { WallDayView } from "./components/wall-day-view";
+import { WallWeekView } from "./components/wall-week-view";
+import { WallMonthView } from "./components/wall-month-view";
+import { WallSwipeNav } from "./components/wall-swipe-nav";
 
 export const revalidate = 60;
 
-export default async function WallPage() {
+type WallPageProps = {
+  searchParams?: Promise<{
+    view?: string;
+    date?: string;
+    selected?: string;
+  }>;
+};
+
+export default async function WallPage({ searchParams }: WallPageProps) {
   const session = await requireUser();
-  const data = await getDashboardData(session.householdId);
+  const currentTheme = await getTheme();
+  const params = (await searchParams) ?? {};
+
+  const view = getViewFromParam(params.view);
+  const date = parseDateParam(params.date);
+  const selectedDate = parseDateParam(params.selected ?? params.date);
+
+  const wallData =
+    view === "day"
+      ? await getWallDayViewData(session.householdId, date)
+      : view === "week"
+      ? await getWallWeekViewData(session.householdId, date)
+      : await getWallMonthViewData(session.householdId, date, selectedDate);
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-7xl px-8 py-8">
-        <header className="mb-8 flex items-end justify-between border-b border-white/10 pb-6">
-          <div>
-            <h1 className="text-5xl font-semibold tracking-tight">Family Hub</h1>
-            <p className="mt-3 text-2xl text-slate-300">
-              {format(data.now, "EEEE, MMMM d, yyyy")}
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-6xl font-semibold tabular-nums">
-              {format(data.now, "HH:mm")}
+    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
+      <WallSwipeNav view={view} date={formatDateParam(date)}>
+        <div className="mx-auto max-w-7xl px-8 py-8">
+          <header className="mb-8 flex items-end justify-between border-b border-slate-200 pb-6 dark:border-white/10">
+            <div>
+              <h1 className="text-5xl font-semibold tracking-tight">Family Hub</h1>
+              <p className="mt-3 text-2xl text-slate-600 dark:text-slate-300">
+                {format(wallData.now, "EEEE, MMMM d, yyyy")}
+              </p>
             </div>
-            <p className="mt-2 text-xl text-slate-400">Wall mode</p>
-          </div>
-        </header>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <section className="rounded-3xl bg-white/5 p-6 ring-1 ring-white/10">
-            <h2 className="mb-4 text-3xl font-semibold">Today</h2>
-            {data.todaysEvents.length === 0 ? (
-              <p className="text-xl text-slate-400">No events today.</p>
-            ) : (
-              <div className="space-y-3">
-                {data.todaysEvents.map((event) => (
-                  <div key={event.id} className="rounded-2xl bg-white/5 px-5 py-4">
-                    <p className="text-2xl font-medium">{event.title}</p>
-                    <p className="mt-1 text-lg text-slate-300">
-                      {event.allDay ? "All day" : format(event.startAt, "HH:mm")}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-3xl bg-white/5 p-6 ring-1 ring-white/10">
-            <h2 className="mb-4 text-3xl font-semibold">Todos</h2>
-            {data.openTodos.length === 0 ? (
-              <p className="text-xl text-slate-400">All clear.</p>
-            ) : (
-              <div className="space-y-3">
-                {data.openTodos.slice(0, 6).map((todo) => (
-                  <div key={todo.id} className="rounded-2xl bg-white/5 px-5 py-4">
-                    <p className="text-2xl font-medium">{todo.title}</p>
-                    {todo.dueAt ? (
-                      <p className="mt-1 text-lg text-slate-300">
-                        Due {format(todo.dueAt, "MMM d · HH:mm")}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-3xl bg-white/5 p-6 ring-1 ring-white/10">
-            <h2 className="mb-4 text-3xl font-semibold">Shopping</h2>
-            {data.activeShoppingItems.length === 0 ? (
-              <p className="text-xl text-slate-400">Nothing to buy.</p>
-            ) : (
-              <div className="space-y-3">
-                {data.activeShoppingItems.slice(0, 8).map((item) => (
-                  <div key={item.id} className="rounded-2xl bg-white/5 px-5 py-4">
-                    <p className="text-2xl font-medium">{item.name}</p>
-                    {item.quantity ? <p className="mt-1 text-lg text-slate-300">{item.quantity}</p> : null}
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-3xl bg-amber-300 p-6 text-slate-950">
-            <h2 className="mb-3 text-3xl font-semibold">Pinned note</h2>
-            {data.pinnedNote ? (
-              <>
-                <p className="text-2xl font-medium">{data.pinnedNote.title}</p>
-                <p className="mt-3 whitespace-pre-wrap text-xl leading-relaxed">
-                  {data.pinnedNote.content}
+            <div className="flex items-end gap-4">
+              <div className="text-right">
+                <div className="text-6xl font-semibold tabular-nums">
+                  {format(wallData.now, "HH:mm")}
+                </div>
+                <p className="mt-2 text-xl text-slate-500 dark:text-slate-400">
+                  Wall mode
                 </p>
-              </>
-            ) : (
-              <p className="text-xl">No pinned note.</p>
-            )}
-          </section>
+              </div>
+
+              <div className="pb-2">
+                <ThemeToggleIcon currentTheme={currentTheme} />
+              </div>
+            </div>
+          </header>
+
+          <WallToolbar view={view} date={date} />
+
+          {wallData.view === "day" ? (
+            <WallDayView
+              todayEvents={wallData.todayEvents}
+              recentPastEvents={wallData.recentPastEvents}
+              openTodos={wallData.openTodos}
+              completedTodos={wallData.completedTodos}
+              shoppingItems={wallData.shoppingItems}
+              pinnedNote={wallData.pinnedNote}
+            />
+          ) : null}
+
+          {wallData.view === "week" ? (
+            <WallWeekView
+              days={wallData.days}
+              recentPastEvents={wallData.recentPastEvents}
+              openTodos={wallData.openTodos}
+              completedTodos={wallData.completedTodos}
+              shoppingItems={wallData.shoppingItems}
+              pinnedNote={wallData.pinnedNote}
+            />
+          ) : null}
+
+          {wallData.view === "month" ? (
+            <WallMonthView
+              viewDate={date}
+              selectedDate={wallData.selectedDate}
+              weeks={wallData.weeks}
+              recentPastEvents={wallData.recentPastEvents}
+              openTodos={wallData.openTodos}
+              completedTodos={wallData.completedTodos}
+              shoppingItems={wallData.shoppingItems}
+              pinnedNote={wallData.pinnedNote}
+              selectedDayEvents={wallData.selectedDayEvents}
+              selectedDayOpenTodos={wallData.selectedDayOpenTodos}
+              selectedDayCompletedTodos={wallData.selectedDayCompletedTodos}
+            />
+          ) : null}
         </div>
-      </div>
+      </WallSwipeNav>
 
       <script
         dangerouslySetInnerHTML={{

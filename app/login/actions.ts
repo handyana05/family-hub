@@ -15,11 +15,15 @@ export async function loginAction(formData: FormData) {
     password: formData.get("password"),
   });
 
+  console.log("loginAction parsed:", parsed.success ? parsed.data : parsed.error);
+
   if (!parsed.success) {
     throw new Error("Please enter a valid email and password.");
   }
 
   const result = await loginWithPassword(parsed.data.email, parsed.data.password);
+
+  console.log("loginAction result:", result);
 
   if (!result.ok) {
     throw new Error(result.error);

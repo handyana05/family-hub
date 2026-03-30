@@ -14,6 +14,8 @@ export async function requireUser() {
 }
 
 export async function loginWithPassword(email: string, password: string) {
+  console.log("loginWithPassword email:", email);
+
   const user = await db.user.findFirst({
     where: { email: email.toLowerCase().trim() },
     select: {
@@ -25,11 +27,19 @@ export async function loginWithPassword(email: string, password: string) {
     },
   });
 
+  console.log("found user:", user ? {
+    id: user.id,
+    email,
+    hasPasswordHash: Boolean(user.passwordHash),
+    role: user.role,
+  } : null);
+
   if (!user || !user.passwordHash) {
     return { ok: false as const, error: "Invalid email or password" };
   }
 
   const valid = await bcrypt.compare(password, user.passwordHash);
+  console.log("password valid:", valid);
 
   if (!valid) {
     return { ok: false as const, error: "Invalid email or password" };

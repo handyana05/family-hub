@@ -31,36 +31,36 @@ export default async function TodosPage() {
 
   return (
     <AppShell title="Todos" subtitle="Shared tasks for the family.">
-      <form action={addTodoAction} className="grid gap-3 rounded-2xl border bg-white p-4 shadow-sm">
+      <form action={addTodoAction} className="grid gap-3 rounded-2xl border bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <input
           name="title"
           placeholder="What needs to be done?"
-          className="rounded-lg border px-3 py-2"
+          className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
           required
         />
         <textarea
           name="notes"
           placeholder="Notes (optional)"
-          className="rounded-lg border px-3 py-2"
+          className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
           rows={3}
         />
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          <select name="priority" className="rounded-lg border px-3 py-2" defaultValue="MEDIUM">
+          <select name="priority" className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950" defaultValue="MEDIUM">
             <option value="LOW">Low</option>
             <option value="MEDIUM">Medium</option>
             <option value="HIGH">High</option>
           </select>
 
-          <input name="dueAt" type="datetime-local" className="rounded-lg border px-3 py-2" />
+          <input name="dueAt" type="datetime-local" className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950" />
 
-          <select name="categoryId" className="rounded-lg border px-3 py-2">
+          <select name="categoryId" className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950">
             <option value="">No category</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>{category.name}</option>
             ))}
           </select>
 
-          <select name="assignedToId" className="rounded-lg border px-3 py-2">
+          <select name="assignedToId" className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950">
             <option value="">Unassigned</option>
             {users.map((user) => (
               <option key={user.id} value={user.id}>{user.name}</option>
@@ -69,7 +69,7 @@ export default async function TodosPage() {
         </div>
 
         <div>
-          <button className="rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800">
+          <button className="rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200">
             Add todo
           </button>
         </div>
@@ -77,10 +77,10 @@ export default async function TodosPage() {
 
       <div className="mt-6 space-y-3">
         {todos.map((todo) => (
-          <div key={todo.id} className="flex items-center justify-between rounded-2xl border bg-white p-4 shadow-sm">
+          <div key={todo.id} className="flex items-center justify-between rounded-2xl border bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div>
               <p className="font-medium">{todo.title}</p>
-              <div className="mt-1 flex flex-wrap gap-2 text-sm text-slate-500">
+              <div className="mt-1 flex flex-wrap gap-2 text-sm text-slate-500 dark:text-slate-400">
                 <span>{todo.assignedTo ? `Assigned to ${todo.assignedTo.name}` : "Unassigned"}</span>
                 {todo.category?.name ? <span>· {todo.category.name}</span> : null}
                 {todo.dueAt ? <span>· Due {format(todo.dueAt, "EEE, MMM d · HH:mm")}</span> : null}

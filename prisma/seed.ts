@@ -15,31 +15,31 @@ async function main() {
 
   const household = await prisma.household.create({
     data: {
-      name: "Family Hub Demo",
+      name: "Atmaja Family Hub",
     },
   });
 
-  const passwordHash = await bcrypt.hash("familyhub123", 10);
+  const passwordHash = await bcrypt.hash("atmajafamilyhub123", 10);
 
-  const alex = await prisma.user.create({
+  const handyana = await prisma.user.create({
     data: {
       householdId: household.id,
-      name: "Alex",
-      email: "alex@example.com",
+      name: "Handyana",
+      email: "handyana.atmaja@hotmail.com",
       passwordHash,
       role: "ADMIN",
       color: "#2563eb",
     },
   });
 
-  const jamie = await prisma.user.create({
+  const anisa = await prisma.user.create({
     data: {
       householdId: household.id,
-      name: "Jamie",
-      email: "jamie@example.com",
+      name: "Anisa",
+      email: "anisa.henarianty86@gmail.com",
       passwordHash,
       role: "MEMBER",
-      color: "#16a34a",
+      color: "#fc9db9",
     },
   });
 
@@ -77,7 +77,7 @@ async function main() {
         name: "Milk",
         quantity: "2",
         status: "ACTIVE",
-        addedById: alex.id,
+        addedById: handyana.id,
         categoryId: groceries.id,
       },
       {
@@ -85,14 +85,14 @@ async function main() {
         name: "Bananas",
         quantity: "6",
         status: "ACTIVE",
-        addedById: jamie.id,
+        addedById: anisa.id,
         categoryId: groceries.id,
       },
       {
         householdId: household.id,
         name: "Dishwasher tabs",
         status: "DONE",
-        addedById: alex.id,
+        addedById: handyana.id,
         completedAt: new Date(),
         categoryId: groceries.id,
       },
@@ -107,8 +107,8 @@ async function main() {
         priority: "HIGH",
         status: "OPEN",
         dueAt: addHours(new Date(), 6),
-        createdById: alex.id,
-        assignedToId: jamie.id,
+        createdById: handyana.id,
+        assignedToId: handyana.id,
         categoryId: chores.id,
       },
       {
@@ -117,8 +117,8 @@ async function main() {
         priority: "MEDIUM",
         status: "OPEN",
         dueAt: subDays(new Date(), 1),
-        createdById: jamie.id,
-        assignedToId: alex.id,
+        createdById: anisa.id,
+        assignedToId: handyana.id,
         categoryId: chores.id,
       },
     ],
@@ -131,18 +131,10 @@ async function main() {
         title: "School pickup",
         startAt: addHours(new Date(), 3),
         allDay: false,
-        createdById: alex.id,
-        assignedToId: jamie.id,
+        createdById: anisa.id,
+        assignedToId: handyana.id,
         categoryId: family.id,
-      },
-      {
-        householdId: household.id,
-        title: "Grandma visit",
-        startAt: addDays(new Date(), 2),
-        allDay: true,
-        createdById: jamie.id,
-        categoryId: family.id,
-      },
+      }
     ],
   });
 
