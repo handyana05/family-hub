@@ -12,21 +12,23 @@ export function DayView({ events, viewDate }: DayViewProps) {
   const dateParam = format(viewDate, "yyyy-MM-dd");
 
   return (
-    <div className="rounded-2xl border bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Day view</h2>
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+      <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-100">Day view</h2>
 
       {events.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No events for this day.</p>
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+          No events for this day.
+        </p>
       ) : (
         <div className="mt-4 space-y-3">
           {events.map((event) => (
             <Link
               key={event.id}
               href={`/calendar?view=day&date=${dateParam}&eventId=${event.id}`}
-              className="block rounded-xl border p-4 hover:opacity-95"
+              className="block rounded-2xl border p-4 transition hover:opacity-95"
               style={getEventChipStyle(event.categoryColor)}
             >
-              <p className="font-medium">{event.title}</p>
+              <p className="text-base font-medium sm:text-lg">{event.title}</p>
               <p className="mt-1 text-sm opacity-80">
                 {event.allDay
                   ? "All day"

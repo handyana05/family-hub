@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { SectionCard } from "@/components/section-card";
+import { CollapsibleSection } from "@/components/collapsible-section";
 import {
   addShoppingItemAction,
   completeShoppingItemAction,
@@ -31,25 +32,30 @@ export default async function ShoppingPage() {
       />
 
       <div className="space-y-6">
-        <SectionCard title="Quick add" subtitle="Designed for fast phone entry">
+        <SectionCard
+          title="Quick add"
+          subtitle="Built for fast phone entry"
+          className="sticky top-3 z-20"
+        >
           <form action={addShoppingItemAction} className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-[1.5fr_0.8fr_auto]">
-              <input
-                type="text"
-                name="name"
-                placeholder="Add an item…"
-                required
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
-              />
+            <input
+              type="text"
+              name="name"
+              placeholder="Add an item…"
+              required
+              autoFocus
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+            />
 
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
               <input
                 type="text"
                 name="quantity"
                 placeholder="Qty (optional)"
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
 
-              <ActionButton icon="plus" className="w-full justify-center py-3 sm:w-auto">
+              <ActionButton icon="plus" className="w-full justify-center py-3.5 sm:w-auto">
                 Add
               </ActionButton>
             </div>
@@ -78,7 +84,6 @@ export default async function ShoppingPage() {
                     <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
                       {item.quantity ? <span>{item.quantity}</span> : null}
                       {item.category?.name ? <span>{item.category.name}</span> : null}
-                      {item.notes ? <span className="truncate">{item.notes}</span> : null}
                     </div>
                   </div>
 
@@ -91,6 +96,7 @@ export default async function ShoppingPage() {
                         iconOnly
                         ariaLabel="Mark done"
                         title="Mark done"
+                        className="min-h-11 min-w-11"
                       />
                     </form>
 
@@ -102,6 +108,7 @@ export default async function ShoppingPage() {
                         iconOnly
                         ariaLabel="Delete item"
                         title="Delete item"
+                        className="min-h-11 min-w-11"
                       />
                     </form>
                   </div>
@@ -111,9 +118,10 @@ export default async function ShoppingPage() {
           )}
         </SectionCard>
 
-        <SectionCard
+        <CollapsibleSection
           title="Completed"
-          subtitle="Tap to reopen if needed"
+          subtitle={`${completedItems.length} completed item${completedItems.length === 1 ? "" : "s"}`}
+          defaultOpen={false}
         >
           {completedItems.length === 0 ? (
             <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -152,13 +160,14 @@ export default async function ShoppingPage() {
                       iconOnly
                       ariaLabel="Reopen item"
                       title="Reopen item"
+                      className="min-h-11 min-w-11"
                     />
                   </form>
                 </div>
               ))}
             </div>
           )}
-        </SectionCard>
+        </CollapsibleSection>
       </div>
     </AppShell>
   );

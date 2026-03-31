@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { SectionCard } from "@/components/section-card";
+import { CollapsibleSection } from "@/components/collapsible-section";
 import {
   completeTodoAction,
   addTodoAction,
@@ -12,7 +13,7 @@ import {
   listOpenTodos,
   listOverdueTodos,
   type TodoItemDto,
-} from "@/lib/services/todo-service"
+} from "@/lib/services/todo-service";
 import { requireUser } from "@/lib/auth";
 import { ActionButton } from "@/components/action-button";
 
@@ -33,24 +34,29 @@ export default async function TodosPage() {
       />
 
       <div className="space-y-6">
-        <SectionCard title="Quick add" subtitle="Capture tasks before you forget them">
+        <SectionCard
+          title="Quick add"
+          subtitle="Capture tasks before you forget them"
+          className="sticky top-3 z-20"
+        >
           <form action={addTodoAction} className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-[1.6fr_1fr_auto]">
-              <input
-                type="text"
-                name="title"
-                placeholder="Add a todo…"
-                required
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
-              />
+            <input
+              type="text"
+              name="title"
+              placeholder="Add a todo…"
+              required
+              autoFocus
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+            />
 
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
               <input
                 type="datetime-local"
                 name="dueAt"
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
 
-              <ActionButton icon="plus" className="w-full justify-center py-3 sm:w-auto">
+              <ActionButton icon="plus" className="w-full justify-center py-3.5 sm:w-auto">
                 Add
               </ActionButton>
             </div>
@@ -100,6 +106,7 @@ export default async function TodosPage() {
                       iconOnly
                       ariaLabel="Complete todo"
                       title="Complete todo"
+                      className="min-h-11 min-w-11"
                     />
                   </form>
                 </div>
@@ -153,6 +160,7 @@ export default async function TodosPage() {
                         iconOnly
                         ariaLabel="Complete todo"
                         title="Complete todo"
+                        className="min-h-11 min-w-11"
                       />
                     </form>
 
@@ -164,6 +172,7 @@ export default async function TodosPage() {
                         iconOnly
                         ariaLabel="Delete todo"
                         title="Delete todo"
+                        className="min-h-11 min-w-11"
                       />
                     </form>
                   </div>
@@ -173,9 +182,10 @@ export default async function TodosPage() {
           )}
         </SectionCard>
 
-        <SectionCard
+        <CollapsibleSection
           title="Completed"
-          subtitle="Tap to reopen if needed"
+          subtitle={`${doneTodos.length} completed item${doneTodos.length === 1 ? "" : "s"}`}
+          defaultOpen={false}
         >
           {doneTodos.length === 0 ? (
             <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -215,13 +225,14 @@ export default async function TodosPage() {
                       iconOnly
                       ariaLabel="Reopen todo"
                       title="Reopen todo"
+                      className="min-h-11 min-w-11"
                     />
                   </form>
                 </div>
               ))}
             </div>
           )}
-        </SectionCard>
+        </CollapsibleSection>
       </div>
     </AppShell>
   );
