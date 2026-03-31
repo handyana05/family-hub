@@ -37,7 +37,7 @@ export default async function TodosPage() {
         <SectionCard
           title="Quick add"
           subtitle="Capture tasks before you forget them"
-          className="sticky top-3 z-20"
+          className="sticky top-3 z-20 overflow-hidden"
         >
           <form action={addTodoAction} className="space-y-3">
             <input
@@ -46,14 +46,14 @@ export default async function TodosPage() {
               placeholder="Add a todo…"
               required
               autoFocus
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+              className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
 
-            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-[1fr_auto]">
               <input
                 type="datetime-local"
                 name="dueAt"
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
 
               <ActionButton icon="plus" className="w-full justify-center py-3.5 sm:w-auto">

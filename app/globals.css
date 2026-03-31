@@ -18,3 +18,17 @@ html.light body {
 html.dark body {
   @apply bg-slate-950 text-slate-100;
 }
+
+input,
+select,
+textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+select {
+  width: 100%;
+}
