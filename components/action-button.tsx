@@ -33,17 +33,22 @@ function Icon({ icon, className = "h-4 w-4" }: { icon?: ActionButtonIcon; classN
 function variantClasses(variant: ActionButtonVariant) {
   switch (variant) {
     case "primary":
-      return "bg-slate-900 text-white hover:bg-slate-800";
+      return "bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200";
+
     case "danger":
       return "bg-red-600 text-white hover:bg-red-700";
+
     case "success":
       return "bg-emerald-600 text-white hover:bg-emerald-500";
+
     case "ghost":
-      return "border text-slate-700 hover:bg-slate-50";
+      return "border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800";
+
     case "wall-done":
       return "bg-emerald-600 text-white hover:bg-emerald-500";
+
     case "wall-reopen":
-      return "bg-white/10 text-white hover:bg-white/15";
+      return "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300 hover:bg-emerald-200 dark:bg-white/10 dark:text-white dark:ring-white/10 dark:hover:bg-white/15";
   }
 }
 
