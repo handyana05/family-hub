@@ -1,113 +1,227 @@
-import { format } from "date-fns";
 import { AppShell } from "@/components/app-shell";
-import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { PageHeader } from "@/components/page-header";
+import { SectionCard } from "@/components/section-card";
 import {
-  addTodoAction,
   completeTodoAction,
-  reopenTodoAction,
+  addTodoAction,
   deleteTodoAction,
+  reopenTodoAction,
 } from "./actions";
+import {
+  listDoneTodos,
+  listOpenTodos,
+  listOverdueTodos,
+  type TodoItemDto,
+} from "@/lib/services/todo-service"
+import { requireUser } from "@/lib/auth";
+import { ActionButton } from "@/components/action-button";
 
 export default async function TodosPage() {
   const session = await requireUser();
 
-  const [todos, categories, users] = await Promise.all([
-    db.todoItem.findMany({
-      where: { householdId: session.householdId },
-      orderBy: [{ status: "asc" }, { dueAt: "asc" }, { createdAt: "desc" }],
-      include: { assignedTo: true, category: true },
-    }),
-    db.category.findMany({
-      where: { householdId: session.householdId, type: "TODO" },
-      orderBy: { name: "asc" },
-    }),
-    db.user.findMany({
-      where: { householdId: session.householdId },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
+  const [openTodos, doneTodos, overdueTodos] = await Promise.all([
+    listOpenTodos(session.householdId),
+    listDoneTodos(session.householdId),
+    listOverdueTodos(session.householdId),
   ]);
 
   return (
-    <AppShell title="Todos" subtitle="Shared tasks for the family.">
-      <form action={addTodoAction} className="grid gap-3 rounded-2xl border bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <input
-          name="title"
-          placeholder="What needs to be done?"
-          className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
-          required
-        />
-        <textarea
-          name="notes"
-          placeholder="Notes (optional)"
-          className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
-          rows={3}
-        />
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          <select name="priority" className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950" defaultValue="MEDIUM">
-            <option value="LOW">Low</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HIGH">High</option>
-          </select>
+    <AppShell title="Todos" subtitle="Fast family task management">
+      <PageHeader
+        title="Todo list"
+        subtitle="One tap to complete, quick enough for everyday use."
+      />
 
-          <input name="dueAt" type="datetime-local" className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950" />
+      <div className="space-y-6">
+        <SectionCard title="Quick add" subtitle="Capture tasks before you forget them">
+          <form action={addTodoAction} className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-[1.6fr_1fr_auto]">
+              <input
+                type="text"
+                name="title"
+                placeholder="Add a todo…"
+                required
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+              />
 
-          <select name="categoryId" className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950">
-            <option value="">No category</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>{category.name}</option>
-            ))}
-          </select>
+              <input
+                type="datetime-local"
+                name="dueAt"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              />
 
-          <select name="assignedToId" className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950">
-            <option value="">Unassigned</option>
-            {users.map((user) => (
-              <option key={user.id} value={user.id}>{user.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <button className="rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200">
-            Add todo
-          </button>
-        </div>
-      </form>
-
-      <div className="mt-6 space-y-3">
-        {todos.map((todo) => (
-          <div key={todo.id} className="flex items-center justify-between rounded-2xl border bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div>
-              <p className="font-medium">{todo.title}</p>
-              <div className="mt-1 flex flex-wrap gap-2 text-sm text-slate-500 dark:text-slate-400">
-                <span>{todo.assignedTo ? `Assigned to ${todo.assignedTo.name}` : "Unassigned"}</span>
-                {todo.category?.name ? <span>· {todo.category.name}</span> : null}
-                {todo.dueAt ? <span>· Due {format(todo.dueAt, "EEE, MMM d · HH:mm")}</span> : null}
-                <span>· {todo.priority}</span>
-              </div>
+              <ActionButton icon="plus" className="w-full justify-center py-3 sm:w-auto">
+                Add
+              </ActionButton>
             </div>
+          </form>
+        </SectionCard>
 
-            <div className="flex gap-2">
-              {todo.status === "OPEN" ? (
-                <form action={completeTodoAction}>
-                  <input type="hidden" name="todoId" value={todo.id} />
-                  <button className="rounded bg-green-600 px-3 py-2 text-sm text-white">Done</button>
-                </form>
-              ) : (
-                <form action={reopenTodoAction}>
-                  <input type="hidden" name="todoId" value={todo.id} />
-                  <button className="rounded bg-amber-600 px-3 py-2 text-sm text-white">Reopen</button>
-                </form>
-              )}
+        <SectionCard
+          title="Overdue"
+          subtitle={`${overdueTodos.length} overdue item${overdueTodos.length === 1 ? "" : "s"}`}
+        >
+          {overdueTodos.length === 0 ? (
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              No overdue todos.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {overdueTodos.map((todo: TodoItemDto) => (
+                <div
+                  key={todo.id}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-red-300 bg-red-50 px-4 py-4 dark:border-red-400/20 dark:bg-red-500/10"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-medium text-red-800 dark:text-red-100 sm:text-lg">
+                      {todo.title}
+                    </p>
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-red-700 dark:text-red-200/80">
+                      {todo.dueAt ? (
+                        <span>
+                          Due{" "}
+                          {new Date(todo.dueAt).toLocaleString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      ) : null}
+                      {todo.priority ? <span>{todo.priority}</span> : null}
+                    </div>
+                  </div>
 
-              <form action={deleteTodoAction}>
-                <input type="hidden" name="todoId" value={todo.id} />
-                <button className="rounded bg-red-600 px-3 py-2 text-sm text-white">Delete</button>
-              </form>
+                  <form action={completeTodoAction}>
+                    <input type="hidden" name="todoId" value={todo.id} />
+                    <ActionButton
+                      variant="success"
+                      icon="done"
+                      iconOnly
+                      ariaLabel="Complete todo"
+                      title="Complete todo"
+                    />
+                  </form>
+                </div>
+              ))}
             </div>
-          </div>
-        ))}
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Open todos"
+          subtitle={`${openTodos.length} open item${openTodos.length === 1 ? "" : "s"}`}
+        >
+          {openTodos.length === 0 ? (
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Nothing open right now.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {openTodos.map((todo: TodoItemDto) => (
+                <div
+                  key={todo.id}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-950"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-medium text-slate-950 dark:text-slate-100 sm:text-lg">
+                      {todo.title}
+                    </p>
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
+                      {todo.dueAt ? (
+                        <span>
+                          Due{" "}
+                          {new Date(todo.dueAt).toLocaleString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      ) : null}
+                      {todo.priority ? <span>{todo.priority}</span> : null}
+                      {todo.assignedTo?.name ? <span>{todo.assignedTo.name}</span> : null}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <form action={completeTodoAction}>
+                      <input type="hidden" name="todoId" value={todo.id} />
+                      <ActionButton
+                        variant="success"
+                        icon="done"
+                        iconOnly
+                        ariaLabel="Complete todo"
+                        title="Complete todo"
+                      />
+                    </form>
+
+                    <form action={deleteTodoAction}>
+                      <input type="hidden" name="todoId" value={todo.id} />
+                      <ActionButton
+                        variant="ghost"
+                        icon="delete"
+                        iconOnly
+                        ariaLabel="Delete todo"
+                        title="Delete todo"
+                      />
+                    </form>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Completed"
+          subtitle="Tap to reopen if needed"
+        >
+          {doneTodos.length === 0 ? (
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              No completed todos yet.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {doneTodos.map((todo: TodoItemDto) => (
+                <div
+                  key={todo.id}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-4 dark:border-emerald-400/20 dark:bg-emerald-500/10"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-medium text-emerald-800 dark:text-emerald-100 sm:text-lg">
+                      {todo.title}
+                    </p>
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-emerald-700 dark:text-emerald-200/80">
+                      {todo.completedAt ? (
+                        <span>
+                          Done{" "}
+                          {new Date(todo.completedAt).toLocaleString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <form action={reopenTodoAction}>
+                    <input type="hidden" name="todoId" value={todo.id} />
+                    <ActionButton
+                      variant="wall-reopen"
+                      icon="reopen"
+                      iconOnly
+                      ariaLabel="Reopen todo"
+                      title="Reopen todo"
+                    />
+                  </form>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
       </div>
     </AppShell>
   );

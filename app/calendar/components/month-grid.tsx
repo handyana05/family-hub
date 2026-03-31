@@ -24,7 +24,7 @@ export function MonthGrid({ weeks }: MonthGridProps) {
     <div className="rounded-2xl border bg-white shadow-sm">
       <div className="grid grid-cols-7 border-b">
         {WEEKDAY_LABELS.map((label) => (
-          <div key={label} className="p-3 text-sm font-medium text-slate-500 dark:text-slate-400">
+          <div key={label} className="p-2 text-xs font-medium text-slate-500 sm:p-3 sm:text-sm dark:text-slate-400">
             {label}
           </div>
         ))}
@@ -36,7 +36,7 @@ export function MonthGrid({ weeks }: MonthGridProps) {
             {week.days.map((day) => (
               <div
                 key={day.key}
-                className={`min-h-36 p-2 ${
+                className={`min-h-24 p-2 sm:min-h-36 ${
                   day.inCurrentMonth ? "bg-white" : "bg-slate-50"
                 }`}
               >

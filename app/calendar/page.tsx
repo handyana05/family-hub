@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app-shell";
+import { PageHeader } from "@/components/page-header";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
@@ -69,33 +70,69 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
   ]);
 
   return (
-    <AppShell title="Calendar" subtitle="Custom household calendar with day, week, and month views.">
-      <CalendarToolbar view={view} date={date} />
+    <AppShell title="Calendar" subtitle="Household planning">
+      <PageHeader
+        title="Calendar"
+        subtitle="Use day and week views most often on phone. Month stays available for planning."
+      />
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-        <div>
-          {calendarData.view === "day" ? (
-            <DayView events={calendarData.events} viewDate={date} />
-          ) : null}
+      <div className="space-y-6">
+        <CalendarToolbar view={view} date={date} />
 
-          {calendarData.view === "week" ? (
-            <WeekView days={calendarData.days} />
-          ) : null}
+        {/* Mobile / tablet stacked layout */}
+        <div className="space-y-6 xl:hidden">
+          <div>
+            <EventForm
+              defaultDate={formatDateParam(date)}
+              categories={categories}
+              users={users}
+              editingEvent={editingEvent}
+              currentView={view}
+              currentDate={date}
+            />
+          </div>
 
-          {calendarData.view === "month" ? (
-            <MonthGrid weeks={calendarData.weeks} />
-          ) : null}
+          <div>
+            {calendarData.view === "day" ? (
+              <DayView events={calendarData.events} viewDate={date} />
+            ) : null}
+
+            {calendarData.view === "week" ? (
+              <WeekView days={calendarData.days} />
+            ) : null}
+
+            {calendarData.view === "month" ? (
+              <MonthGrid weeks={calendarData.weeks} />
+            ) : null}
+          </div>
         </div>
 
-        <div>
-          <EventForm
-            defaultDate={formatDateParam(date)}
-            categories={categories}
-            users={users}
-            editingEvent={editingEvent}
-            currentView={view}
-            currentDate={date}
-          />
+        {/* Desktop wider layout */}
+        <div className="hidden gap-6 xl:grid xl:grid-cols-[1fr_360px]">
+          <div>
+            {calendarData.view === "day" ? (
+              <DayView events={calendarData.events} viewDate={date} />
+            ) : null}
+
+            {calendarData.view === "week" ? (
+              <WeekView days={calendarData.days} />
+            ) : null}
+
+            {calendarData.view === "month" ? (
+              <MonthGrid weeks={calendarData.weeks} />
+            ) : null}
+          </div>
+
+          <div className="self-start">
+            <EventForm
+              defaultDate={formatDateParam(date)}
+              categories={categories}
+              users={users}
+              editingEvent={editingEvent}
+              currentView={view}
+              currentDate={date}
+            />
+          </div>
         </div>
       </div>
     </AppShell>
