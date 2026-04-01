@@ -5,14 +5,11 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-const addTodoSchema = z.object({
-  title: z.string().trim().min(1).max(140),
-  notes: z.string().trim().max(1000).optional().or(z.literal("")),
-  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
-  dueAt: z.string().optional().or(z.literal("")),
-  categoryId: z.string().trim().optional().or(z.literal("")),
-  assignedToId: z.string().trim().optional().or(z.literal("")),
-});
+function normalizeOptionalString(value: FormDataEntryValue | null) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
 
 function revalidateTodoViews() {
   revalidatePath("/todos");
@@ -20,37 +17,56 @@ function revalidateTodoViews() {
   revalidatePath("/wall");
 }
 
-export async function addTodoAction(formData: FormData) {
-  const session = await requireUser();
+const createTodoSchema = z.object({
+  title: z.string().trim().min(1, "Title is required."),
+  dueAt: z.string().nullable(),
+});
 
-  const parsed = addTodoSchema.safeParse({
-    title: formData.get("title"),
-    notes: formData.get("notes"),
-    priority: formData.get("priority"),
-    dueAt: formData.get("dueAt"),
-    categoryId: formData.get("categoryId"),
-    assignedToId: formData.get("assignedToId"),
-  });
+export async function createTodoAction(formData: FormData) {
+  try {
+    const session = await requireUser();
 
-  if (!parsed.success) {
-    throw new Error("Invalid todo input");
+    const parsed = createTodoSchema.safeParse({
+      title: formData.get("title"),
+      dueAt: normalizeOptionalString(formData.get("dueAt")),
+    });
+
+    if (!parsed.success) {
+      throw new Error(parsed.error.issues[0]?.message ?? "Invalid todo input.");
+    }
+
+    const dueAt =
+      parsed.data.dueAt && parsed.data.dueAt.length > 0
+        ? new Date(parsed.data.dueAt)
+        : null;
+
+    if (dueAt && Number.isNaN(dueAt.getTime())) {
+      throw new Error("Invalid due date.");
+    }
+
+    await db.todoItem.create({
+      data: {
+        householdId: session.householdId,
+        title: parsed.data.title,
+        dueAt,
+        status: "OPEN",
+        priority: "MEDIUM",
+        createdById: session.userId,
+      },
+    });
+
+    revalidateTodoViews();
+  } catch (error) {
+    console.error("createTodoAction failed:", error);
+    throw error;
   }
+}
 
-  await db.todoItem.create({
-    data: {
-      householdId: session.householdId,
-      createdById: session.userId,
-      title: parsed.data.title,
-      notes: parsed.data.notes || null,
-      priority: parsed.data.priority,
-      dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
-      categoryId: parsed.data.categoryId || null,
-      assignedToId: parsed.data.assignedToId || null,
-      status: "OPEN",
-    },
-  });
-
-  revalidateTodoViews();
+/**
+ * Backward-compatible alias in case any older page still imports addTodoAction.
+ */
+export async function addTodoAction(formData: FormData) {
+  return createTodoAction(formData);
 }
 
 export async function completeTodoAction(formData: FormData) {
