@@ -1,102 +1,147 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 export type EventFormState = {
   ok: boolean;
-  message?: string;
+  message: string;
 };
 
-const eventSchema = z.object({
-  title: z.string().trim().min(1, "Title is required").max(140, "Title is too long"),
-  description: z.string().trim().max(1000, "Description is too long").optional().or(z.literal("")),
-  date: z.string().min(1, "Date is required"),
-  startTime: z.string().optional().or(z.literal("")),
-  endTime: z.string().optional().or(z.literal("")),
-  allDay: z.union([z.literal("on"), z.literal("")]).optional(),
-  categoryId: z.string().trim().optional().or(z.literal("")),
-  assignedToId: z.string().trim().optional().or(z.literal("")),
+const initialState: EventFormState = {
+  ok: false,
+  message: "",
+};
+
+function normalizeOptionalString(value: FormDataEntryValue | null) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function combineDateAndTime(dateStr: string, timeStr: string | null) {
+  if (!timeStr) return null;
+
+  const date = new Date(`${dateStr}T${timeStr}`);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date;
+}
+
+function startOfDayLocal(dateStr: string) {
+  const date = new Date(`${dateStr}T00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+function endOfDayLocal(dateStr: string) {
+  const date = new Date(`${dateStr}T23:59`);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+const baseEventSchema = z.object({
+  title: z.string().trim().min(1, "Title is required."),
+  description: z.string().nullable(),
+  date: z.string().trim().min(1, "Date is required."),
+  startTime: z.string().nullable(),
+  endTime: z.string().nullable(),
+  allDay: z.boolean(),
+  categoryId: z.string().nullable(),
+  assignedToId: z.string().nullable(),
 });
 
-function revalidateCalendarViews() {
+function revalidateEventViews() {
   revalidatePath("/calendar");
   revalidatePath("/dashboard");
   revalidatePath("/wall");
 }
 
-function buildDateTime(dateStr: string, timeStr?: string | null) {
-  if (!timeStr) {
-    return new Date(`${dateStr}T00:00:00`);
-  }
-  return new Date(`${dateStr}T${timeStr}:00`);
-}
-
-function getReturnTo(formData: FormData) {
-  const parsed = z.string().min(1).safeParse(formData.get("returnTo"));
-  return parsed.success ? parsed.data : "/calendar";
-}
-
 export async function createEventAction(
-  _prevState: EventFormState,
+  _prevState: EventFormState = initialState,
   formData: FormData
 ): Promise<EventFormState> {
-  const session = await requireUser();
-
-  const parsed = eventSchema.safeParse({
-    title: formData.get("title"),
-    description: formData.get("description"),
-    date: formData.get("date"),
-    startTime: formData.get("startTime"),
-    endTime: formData.get("endTime"),
-    allDay: formData.get("allDay"),
-    categoryId: formData.get("categoryId"),
-    assignedToId: formData.get("assignedToId"),
-  });
-
-  if (!parsed.success) {
-    return {
-      ok: false,
-      message: parsed.error.issues[0]?.message ?? "Invalid event input",
-    };
-  }
-
   try {
-    const isAllDay = parsed.data.allDay === "on";
+    const session = await requireUser();
 
-    const startAt = isAllDay
-      ? new Date(`${parsed.data.date}T00:00:00`)
-      : buildDateTime(parsed.data.date, parsed.data.startTime);
+    const parsed = baseEventSchema.safeParse({
+      title: formData.get("title"),
+      description: normalizeOptionalString(formData.get("description")),
+      date: formData.get("date"),
+      startTime: normalizeOptionalString(formData.get("startTime")),
+      endTime: normalizeOptionalString(formData.get("endTime")),
+      allDay: formData.get("allDay") === "on",
+      categoryId: normalizeOptionalString(formData.get("categoryId")),
+      assignedToId: normalizeOptionalString(formData.get("assignedToId")),
+    });
 
-    const endAt =
-      isAllDay || !parsed.data.endTime
-        ? null
-        : buildDateTime(parsed.data.date, parsed.data.endTime);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        message: parsed.error.issues[0]?.message ?? "Invalid input.",
+      };
+    }
+
+    const { title, description, date, startTime, endTime, allDay, categoryId, assignedToId } =
+      parsed.data;
+
+    let startAt: Date | null = null;
+    let endAt: Date | null = null;
+
+    if (allDay) {
+      startAt = startOfDayLocal(date);
+      endAt = endOfDayLocal(date);
+    } else {
+      startAt = combineDateAndTime(date, startTime);
+
+      if (!startAt) {
+        return {
+          ok: false,
+          message: "Start time is required for non all-day events.",
+        };
+      }
+
+      endAt = combineDateAndTime(date, endTime);
+
+      if (endAt && endAt < startAt) {
+        return {
+          ok: false,
+          message: "End time cannot be earlier than start time.",
+        };
+      }
+    }
+
+    if (!startAt) {
+      return {
+        ok: false,
+        message: "Invalid date or time input.",
+      };
+    }
 
     await db.calendarEvent.create({
       data: {
         householdId: session.householdId,
-        title: parsed.data.title,
-        description: parsed.data.description || null,
+        title,
+        description,
         startAt,
         endAt,
-        allDay: isAllDay,
-        categoryId: parsed.data.categoryId || null,
-        assignedToId: parsed.data.assignedToId || null,
+        allDay,
+        categoryId,
+        assignedToId,
         createdById: session.userId,
       },
     });
 
-    revalidateCalendarViews();
+    revalidateEventViews();
 
     return {
       ok: true,
       message: "Event created.",
     };
-  } catch {
+  } catch (error) {
+    console.error("createEventAction failed:", error);
     return {
       ok: false,
       message: "Could not create event.",
@@ -105,79 +150,109 @@ export async function createEventAction(
 }
 
 export async function updateEventAction(
-  _prevState: EventFormState,
+  _prevState: EventFormState = initialState,
   formData: FormData
 ): Promise<EventFormState> {
-  const session = await requireUser();
-
-  const eventId = z.string().min(1).safeParse(formData.get("eventId"));
-  if (!eventId.success) {
-    return { ok: false, message: "Missing event id." };
-  }
-
-  const parsed = eventSchema.safeParse({
-    title: formData.get("title"),
-    description: formData.get("description"),
-    date: formData.get("date"),
-    startTime: formData.get("startTime"),
-    endTime: formData.get("endTime"),
-    allDay: formData.get("allDay"),
-    categoryId: formData.get("categoryId"),
-    assignedToId: formData.get("assignedToId"),
-  });
-
-  if (!parsed.success) {
-    return {
-      ok: false,
-      message: parsed.error.issues[0]?.message ?? "Invalid event input",
-    };
-  }
-
-  const returnTo = getReturnTo(formData);
-
   try {
-    const isAllDay = parsed.data.allDay === "on";
+    const session = await requireUser();
 
-    const startAt = isAllDay
-      ? new Date(`${parsed.data.date}T00:00:00`)
-      : buildDateTime(parsed.data.date, parsed.data.startTime);
+    const eventId = z.string().min(1).parse(formData.get("eventId"));
 
-    const endAt =
-      isAllDay || !parsed.data.endTime
-        ? null
-        : buildDateTime(parsed.data.date, parsed.data.endTime);
+    const parsed = baseEventSchema.safeParse({
+      title: formData.get("title"),
+      description: normalizeOptionalString(formData.get("description")),
+      date: formData.get("date"),
+      startTime: normalizeOptionalString(formData.get("startTime")),
+      endTime: normalizeOptionalString(formData.get("endTime")),
+      allDay: formData.get("allDay") === "on",
+      categoryId: normalizeOptionalString(formData.get("categoryId")),
+      assignedToId: normalizeOptionalString(formData.get("assignedToId")),
+    });
 
-    await db.calendarEvent.updateMany({
+    if (!parsed.success) {
+      return {
+        ok: false,
+        message: parsed.error.issues[0]?.message ?? "Invalid input.",
+      };
+    }
+
+    const { title, description, date, startTime, endTime, allDay, categoryId, assignedToId } =
+      parsed.data;
+
+    let startAt: Date | null = null;
+    let endAt: Date | null = null;
+
+    if (allDay) {
+      startAt = startOfDayLocal(date);
+      endAt = endOfDayLocal(date);
+    } else {
+      startAt = combineDateAndTime(date, startTime);
+
+      if (!startAt) {
+        return {
+          ok: false,
+          message: "Start time is required for non all-day events.",
+        };
+      }
+
+      endAt = combineDateAndTime(date, endTime);
+
+      if (endAt && endAt < startAt) {
+        return {
+          ok: false,
+          message: "End time cannot be earlier than start time.",
+        };
+      }
+    }
+
+    if (!startAt) {
+      return {
+        ok: false,
+        message: "Invalid date or time input.",
+      };
+    }
+
+    const updated = await db.calendarEvent.updateMany({
       where: {
-        id: eventId.data,
+        id: eventId,
         householdId: session.householdId,
       },
       data: {
-        title: parsed.data.title,
-        description: parsed.data.description || null,
+        title,
+        description,
         startAt,
         endAt,
-        allDay: isAllDay,
-        categoryId: parsed.data.categoryId || null,
-        assignedToId: parsed.data.assignedToId || null,
+        allDay,
+        categoryId,
+        assignedToId,
       },
     });
 
-    revalidateCalendarViews();
-  } catch {
+    if (updated.count === 0) {
+      return {
+        ok: false,
+        message: "Event not found.",
+      };
+    }
+
+    revalidateEventViews();
+
+    return {
+      ok: true,
+      message: "Event updated.",
+    };
+  } catch (error) {
+    console.error("updateEventAction failed:", error);
     return {
       ok: false,
       message: "Could not update event.",
     };
   }
-
-  redirect(returnTo);
 }
 
 export async function deleteEventAction(formData: FormData) {
   const session = await requireUser();
   const eventId = z.string().min(1).parse(formData.get("eventId"));
-  const returnTo = getReturnTo(formData);
 
   await db.calendarEvent.deleteMany({
     where: {
@@ -186,6 +261,5 @@ export async function deleteEventAction(formData: FormData) {
     },
   });
 
-  revalidateCalendarViews();
-  redirect(returnTo);
+  revalidateEventViews();
 }
