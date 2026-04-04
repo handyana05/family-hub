@@ -1,140 +1,122 @@
-import { AppShell } from "@/components/app-shell";
-import { PageHeader } from "@/components/page-header";
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import {
-  formatDateParam,
-  getViewFromParam,
-  parseDateParam,
-} from "@/lib/date";
-import {
-  getCalendarDayData,
-  getCalendarMonthData,
-  getCalendarWeekData,
-} from "@/lib/services/calendar-service";
-import { CalendarToolbar } from "./components/calendar-toolbar";
-import { EventForm } from "./components/event-form";
-import { DayView } from "./components/day-view";
-import { WeekView } from "./components/week-view";
-import { MonthGrid } from "./components/month-grid";
 
-type CalendarPageProps = {
-  searchParams?: Promise<{
-    view?: string;
-    date?: string;
-    eventId?: string;
-  }>;
-};
+function normalizeOptionalString(value: FormDataEntryValue | null) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
 
-export default async function CalendarPage({ searchParams }: CalendarPageProps) {
+function revalidateTodoViews() {
+  revalidatePath("/todos");
+  revalidatePath("/dashboard");
+  revalidatePath("/wall");
+}
+
+const createTodoSchema = z.object({
+  title: z.string().trim().min(1, "Title is required."),
+  dueAt: z.string().nullable(),
+});
+
+export async function createTodoAction(formData: FormData) {
+  try {
+    const session = await requireUser();
+
+    const parsed = createTodoSchema.safeParse({
+      title: formData.get("title"),
+      dueAt: normalizeOptionalString(formData.get("dueAt")),
+    });
+
+    if (!parsed.success) {
+      throw new Error(parsed.error.issues[0]?.message ?? "Invalid todo input.");
+    }
+
+    const dueAt =
+      parsed.data.dueAt && parsed.data.dueAt.length > 0
+        ? new Date(parsed.data.dueAt)
+        : null;
+
+    if (dueAt && Number.isNaN(dueAt.getTime())) {
+      throw new Error("Invalid due date.");
+    }
+
+    await db.todoItem.create({
+      data: {
+        householdId: session.householdId,
+        title: parsed.data.title,
+        dueAt,
+        status: "OPEN",
+        priority: "MEDIUM",
+        createdById: session.userId,
+      },
+    });
+
+    revalidateTodoViews();
+  } catch (error) {
+    console.error("createTodoAction failed:", error);
+    throw error;
+  }
+}
+
+/**
+ * Backward-compatible alias in case any older page still imports addTodoAction.
+ */
+export async function addTodoAction(formData: FormData) {
+  return createTodoAction(formData);
+}
+
+export async function completeTodoAction(formData: FormData) {
   const session = await requireUser();
-  const params = (await searchParams) ?? {};
+  const todoId = z.string().min(1).parse(formData.get("todoId"));
 
-  const view = getViewFromParam(params.view);
-  const date = parseDateParam(params.date);
+  await db.todoItem.updateMany({
+    where: {
+      id: todoId,
+      householdId: session.householdId,
+      status: "OPEN",
+    },
+    data: {
+      status: "DONE",
+      completedAt: new Date(),
+    },
+  });
 
-  const [categories, users, calendarData, editingEvent] = await Promise.all([
-    db.category.findMany({
-      where: { householdId: session.householdId, type: "CALENDAR" },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    db.user.findMany({
-      where: { householdId: session.householdId },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    view === "day"
-      ? getCalendarDayData(session.householdId, date)
-      : view === "week"
-      ? getCalendarWeekData(session.householdId, date)
-      : getCalendarMonthData(session.householdId, date),
-    params.eventId
-      ? db.calendarEvent.findFirst({
-          where: {
-            id: params.eventId,
-            householdId: session.householdId,
-          },
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            startAt: true,
-            endAt: true,
-            allDay: true,
-            categoryId: true,
-            assignedToId: true,
-          },
-        })
-      : Promise.resolve(null),
-  ]);
+  revalidateTodoViews();
+}
 
-  return (
-    <AppShell title="Calendar" subtitle="Household planning">
-      <PageHeader
-        title="Calendar"
-        subtitle="Use day and week views most often on phone. Month stays available for planning."
-      />
+export async function reopenTodoAction(formData: FormData) {
+  const session = await requireUser();
+  const todoId = z.string().min(1).parse(formData.get("todoId"));
 
-      <div className="space-y-6">
-        <CalendarToolbar view={view} date={date} />
+  await db.todoItem.updateMany({
+    where: {
+      id: todoId,
+      householdId: session.householdId,
+      status: "DONE",
+    },
+    data: {
+      status: "OPEN",
+      completedAt: null,
+    },
+  });
 
-        {/* Mobile / tablet stacked layout */}
-        <div className="space-y-6 xl:hidden">
-          <div>
-            <EventForm
-              defaultDate={formatDateParam(date)}
-              categories={categories}
-              users={users}
-              editingEvent={editingEvent}
-              currentView={view}
-              currentDate={date}
-            />
-          </div>
+  revalidateTodoViews();
+}
 
-          <div>
-            {calendarData.view === "day" ? (
-              <DayView events={calendarData.events} viewDate={date} />
-            ) : null}
+export async function deleteTodoAction(formData: FormData) {
+  const session = await requireUser();
+  const todoId = z.string().min(1).parse(formData.get("todoId"));
 
-            {calendarData.view === "week" ? (
-              <WeekView days={calendarData.days} />
-            ) : null}
+  await db.todoItem.deleteMany({
+    where: {
+      id: todoId,
+      householdId: session.householdId,
+    },
+  });
 
-            {calendarData.view === "month" ? (
-              <MonthGrid weeks={calendarData.weeks} />
-            ) : null}
-          </div>
-        </div>
-
-        {/* Desktop wider layout */}
-        <div className="hidden gap-6 xl:grid xl:grid-cols-[1fr_360px]">
-          <div>
-            {calendarData.view === "day" ? (
-              <DayView events={calendarData.events} viewDate={date} />
-            ) : null}
-
-            {calendarData.view === "week" ? (
-              <WeekView days={calendarData.days} />
-            ) : null}
-
-            {calendarData.view === "month" ? (
-              <MonthGrid weeks={calendarData.weeks} />
-            ) : null}
-          </div>
-
-          <div className="self-start">
-            <EventForm
-              defaultDate={formatDateParam(date)}
-              categories={categories}
-              users={users}
-              editingEvent={editingEvent}
-              currentView={view}
-              currentDate={date}
-            />
-          </div>
-        </div>
-      </div>
-    </AppShell>
-  );
+  revalidateTodoViews();
 }
