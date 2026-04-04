@@ -180,7 +180,8 @@ export function EventFormClient({
           />
         </div>
 
-        <div className="space-y-3 sm:grid sm:min-w-0 sm:grid-cols-3 sm:gap-3 sm:space-y-0">
+        <div className="space-y-3">
+          {/* Date gets full width */}
           <div className="w-full min-w-0 max-w-full">
             <input
               name="date"
@@ -191,22 +192,25 @@ export function EventFormClient({
             />
           </div>
 
-          <div className="w-full min-w-0 max-w-full">
-            <input
-              name="startTime"
-              type="time"
-              defaultValue={startTimeValue}
-              className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-            />
-          </div>
+          {/* Time row */}
+          <div className="grid min-w-0 grid-cols-2 gap-3">
+            <div className="w-full min-w-0 max-w-full">
+              <input
+                name="startTime"
+                type="time"
+                defaultValue={startTimeValue}
+                className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              />
+            </div>
 
-          <div className="w-full min-w-0 max-w-full">
-            <input
-              name="endTime"
-              type="time"
-              defaultValue={endTimeValue}
-              className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-            />
+            <div className="w-full min-w-0 max-w-full">
+              <input
+                name="endTime"
+                type="time"
+                defaultValue={endTimeValue}
+                className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              />
+            </div>
           </div>
         </div>
 
