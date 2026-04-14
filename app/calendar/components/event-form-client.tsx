@@ -181,20 +181,26 @@ export function EventFormClient({
         </div>
 
         <div className="space-y-3">
-          {/* Date gets full width */}
-          <div className="w-full min-w-0 max-w-full">
-            <input
-              name="date"
-              type="date"
-              defaultValue={dateValue}
-              required
-              className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-            />
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Date
+            </label>
+            <div className="w-full overflow-hidden">
+              <input
+                name="date"
+                type="date"
+                defaultValue={dateValue}
+                required
+                className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              />
+            </div>
           </div>
 
-          {/* Time row */}
-          <div className="grid min-w-0 grid-cols-2 gap-3">
-            <div className="w-full min-w-0 max-w-full">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Start time
+            </label>
+            <div className="w-full overflow-hidden">
               <input
                 name="startTime"
                 type="time"
@@ -202,8 +208,13 @@ export function EventFormClient({
                 className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
             </div>
+          </div>
 
-            <div className="w-full min-w-0 max-w-full">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              End time
+            </label>
+            <div className="w-full overflow-hidden">
               <input
                 name="endTime"
                 type="time"
