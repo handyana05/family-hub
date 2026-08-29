@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { SectionCard } from "@/components/section-card";
 import { CollapsibleSection } from "@/components/collapsible-section";
@@ -27,7 +26,7 @@ export default async function TodosPage() {
   ]);
 
   return (
-    <AppShell title="Todos" subtitle="Fast family task management">
+    <>
       <PageHeader
         title="Todo list"
         subtitle="One tap to complete, quick enough for everyday use."
@@ -234,6 +233,6 @@ export default async function TodosPage() {
           )}
         </CollapsibleSection>
       </div>
-    </AppShell>
+    </>
   );
 }

@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { format } from "date-fns";
-import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { SectionCard } from "@/components/section-card";
 import { requireUser } from "@/lib/auth";
 import { getDashboardData } from "@/lib/services/dashboard-service";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Pin,
+  ShoppingCart,
+  TriangleAlert,
+} from "lucide-react";
 
 function priorityClass(priority: "LOW" | "MEDIUM" | "HIGH") {
   if (priority === "HIGH") {
@@ -23,7 +29,7 @@ export default async function DashboardPage() {
   const data = await getDashboardData(session.householdId);
 
   return (
-    <AppShell title="Dashboard" subtitle="What matters now for your household">
+    <>
       <PageHeader
         title="Dashboard"
         subtitle="Today’s essentials, optimized for quick phone checks."
@@ -45,6 +51,8 @@ export default async function DashboardPage() {
               Open calendar
             </Link>
           }
+          icon={CalendarDays}
+          iconTone="violet"
         >
           {data.todaysEvents.length === 0 ? (
             <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -76,6 +84,8 @@ export default async function DashboardPage() {
             title="Overdue todos"
             subtitle={`${data.overdueTodos.length} overdue item${data.overdueTodos.length === 1 ? "" : "s"}`}
             className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30"
+            icon={TriangleAlert}
+            iconTone="red"
           >
             <div className="space-y-3">
               {data.overdueTodos.map((todo) => (
@@ -109,6 +119,8 @@ export default async function DashboardPage() {
                 Open todos
               </Link>
             }
+            icon={CheckCircle2}
+            iconTone="green"
           >
             {data.openTodos.length === 0 ? (
               <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -158,6 +170,8 @@ export default async function DashboardPage() {
                 Open shopping
               </Link>
             }
+            icon={ShoppingCart}
+            iconTone="blue"
           >
             {data.activeShoppingItems.length === 0 ? (
               <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -185,7 +199,11 @@ export default async function DashboardPage() {
           </SectionCard>
         </div>
 
-        <SectionCard title="Pinned family note">
+        <SectionCard 
+          title="Pinned family note"
+          icon={Pin}
+          iconTone="amber"
+        >
           {data.pinnedNote ? (
             <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:ring-amber-800">
               <h3 className="text-base font-medium text-amber-950 dark:text-amber-200 sm:text-lg">
@@ -202,6 +220,6 @@ export default async function DashboardPage() {
           )}
         </SectionCard>
       </div>
-    </AppShell>
+    </>
   );
 }

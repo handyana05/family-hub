@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/app-shell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -21,7 +20,7 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <AppShell title="Settings" subtitle="Starter settings overview.">
+    <>
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="rounded-2xl border bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-lg font-semibold">Theme</h2>
@@ -66,6 +65,6 @@ export default async function SettingsPage() {
           </div>
         </section>
       </div>
-    </AppShell>
+    </>
   );
 }

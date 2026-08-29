@@ -3,11 +3,13 @@ import { requireUser } from "@/lib/auth";
 import { getViewFromParam, parseDateParam, formatDateParam } from "@/lib/date";
 import { getTheme } from "@/lib/theme";
 import { ThemeToggleIcon } from "@/components/theme-toggle-icon";
+import { getFamilyHeaderData } from "@/lib/services/family-service";
 import {
   getWallDayViewData,
   getWallMonthViewData,
   getWallWeekViewData,
 } from "@/lib/services/wall-service";
+import { FamilyGreeting } from "./components/family-greeting";
 import { WallToolbar } from "./components/wall-toolbar";
 import { WallDayView } from "./components/wall-day-view";
 import { WallWeekView } from "./components/wall-week-view";
@@ -28,7 +30,9 @@ export default async function WallPage({ searchParams }: WallPageProps) {
   const session = await requireUser();
   const currentTheme = await getTheme();
   const params = (await searchParams) ?? {};
-
+const family = await getFamilyHeaderData(
+  session.householdId
+);
   const view = getViewFromParam(params.view);
   const date = parseDateParam(params.date);
   const selectedDate = parseDateParam(params.selected ?? params.date);
@@ -45,12 +49,10 @@ export default async function WallPage({ searchParams }: WallPageProps) {
       <WallSwipeNav view={view} date={formatDateParam(date)}>
         <div className="mx-auto max-w-7xl px-8 py-8">
           <header className="mb-8 flex items-end justify-between border-b border-slate-200 pb-6 dark:border-white/10">
-            <div>
-              <h1 className="text-5xl font-semibold tracking-tight">Family Hub</h1>
-              <p className="mt-3 text-2xl text-slate-600 dark:text-slate-300">
-                {format(wallData.now, "EEEE, MMMM d, yyyy")}
-              </p>
-            </div>
+            <FamilyGreeting
+              familyName={family.name}
+              members={family.members}
+            />
 
             <div className="flex items-end gap-4">
               <div className="text-right">

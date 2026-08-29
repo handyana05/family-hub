@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -70,7 +69,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
   ]);
 
   return (
-    <AppShell title="Calendar" subtitle="Household planning">
+    <>
       <PageHeader
         title="Calendar"
         subtitle="Use day and week views most often on phone. Month stays available for planning."
@@ -135,6 +134,6 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
           </div>
         </div>
       </div>
-    </AppShell>
+    </>
   );
 }

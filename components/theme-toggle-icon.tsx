@@ -2,7 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useTransition } from "react";
-import { setThemeAction } from "@/app/settings/actions";
+import { setThemeAction } from "@/app/(app)/settings/actions";
 import type { ThemeMode } from "@/lib/theme";
 
 type ThemeToggleIconProps = {

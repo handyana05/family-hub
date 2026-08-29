@@ -1,31 +1,45 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login"];
+const PROTECTED_ROUTES = [
+  "/dashboard",
+  "/calendar",
+  "/shopping",
+  "/todos",
+  "/settings",
+  "/wall",
+]
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isStatic =
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon.ico");
+  const isProtected = PROTECTED_ROUTES.some(
+    (route) =>
+      pathname === route ||
+      pathname.startsWith(`${route}/`)
+  );
 
-  if (isStatic) return NextResponse.next();
-
-  const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
-  const hasSession = Boolean(request.cookies.get("familyhub_session")?.value);
-
-  if (!hasSession && !isPublic) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (!isProtected) {
+    return NextResponse.next();
   }
 
-  if (hasSession && pathname === "/login") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  const session = request.cookies.get("familyhub_session");
+
+  if (!session) {
+    const loginUrl = new URL("/login", request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/dashboard/:path*",
+    "/calendar/:path*",
+    "/shopping/:path*",
+    "/todos/:path*",
+    "/settings/:path*",
+    "/wall/:path*",
+  ],
 };

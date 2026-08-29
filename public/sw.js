@@ -1,49 +1,51 @@
-const CACHE_NAME = "family-hub-v1";
-const APP_SHELL = [
-  "/",
-  "/login",
-  "/dashboard",
-  "/calendar",
-  "/shopping",
-  "/todos",
-  "/settings",
-  "/wall",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/maskable-512.png",
-];
+const CACHE_NAME = "family-hub-v3";
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
-  );
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key))
+        )
       )
-    )
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+  const request = event.request;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return (
-        cached ||
-        fetch(event.request).catch(() => {
-          return caches.match("/dashboard");
-        })
-      );
-    })
-  );
+  if (request.method !== "GET") {
+    return;
+  }
+
+  const url = new URL(request.url);
+
+  // Important:
+  // Do not intercept page navigations.
+  // Next.js middleware/auth redirects must work normally.
+  if (request.mode === "navigate") {
+    return;
+  }
+
+  // Let Next.js handle its generated assets normally.
+  if (url.pathname.startsWith("/_next/")) {
+    return;
+  }
+
+  // Ignore external resources.
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // For now, just let the browser fetch normally.
+  // We can introduce safe static caching later.
+  return;
 });

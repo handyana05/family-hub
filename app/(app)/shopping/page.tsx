@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { SectionCard } from "@/components/section-card";
 import { CollapsibleSection } from "@/components/collapsible-section";
@@ -25,7 +24,7 @@ export default async function ShoppingPage() {
   ]);
 
   return (
-    <AppShell title="Shopping" subtitle="Fast family shopping list">
+    <>
       <PageHeader
         title="Shopping list"
         subtitle="Add quickly, tap once to complete."
@@ -169,6 +168,6 @@ export default async function ShoppingPage() {
           )}
         </CollapsibleSection>
       </div>
-    </AppShell>
+    </>
   );
 }
