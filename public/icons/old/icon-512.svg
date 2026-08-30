@@ -1,0 +1,21 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="#0F766E"/>
+
+  <!-- House / container -->
+  <rect x="144" y="176" width="224" height="200" rx="36" fill="white"/>
+
+  <!-- Calendar header -->
+  <rect x="144" y="176" width="224" height="56" rx="36" fill="#99F6E4"/>
+  <rect x="144" y="204" width="224" height="28" fill="#99F6E4"/>
+
+  <!-- Calendar tabs -->
+  <rect x="188" y="144" width="20" height="44" rx="10" fill="white"/>
+  <rect x="304" y="144" width="20" height="44" rx="10" fill="white"/>
+
+  <!-- Roof -->
+  <path d="M168 216L256 144L344 216" stroke="white" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Heart (family hub) -->
+  <path d="M256 320C252 316 244 310 234 302C214 286 204 276 204 260C204 246 216 234 230 234C240 234 248 240 256 250C264 240 272 234 282 234C296 234 308 246 308 260C308 276 298 286 278 302C268 310 260 316 256 320Z" fill="#0F766E"/>
+</svg>
