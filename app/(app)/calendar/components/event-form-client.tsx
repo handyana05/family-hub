@@ -50,6 +50,7 @@ export function EventFormClient({
   currentDate,
 }: EventFormClientProps) {
   const isEditing = Boolean(editingEvent);
+
   const formRef = useRef<HTMLFormElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -60,6 +61,9 @@ export function EventFormClient({
   );
 
   const [visibleMessage, setVisibleMessage] = useState("");
+
+  const initialAllDay = editingEvent?.allDay ?? false;
+  const [allDay, setAllDay] = useState(initialAllDay);
 
   const dateValue = editingEvent
     ? format(editingEvent.startAt, "yyyy-MM-dd")
@@ -75,14 +79,33 @@ export function EventFormClient({
       ? format(editingEvent.endAt, "HH:mm")
       : "";
 
-  const clearSelectionHref = `/calendar?view=${currentView}&date=${formatDateParam(currentDate)}`;
+  const clearSelectionHref = `/calendar?view=${currentView}&date=${formatDateParam(
+    currentDate
+  )}`;
+
   const returnTo = clearSelectionHref;
 
+  /**
+   * Keep the All-day checkbox in sync when switching
+   * between events in edit mode.
+   */
+  useEffect(() => {
+    setAllDay(editingEvent?.allDay ?? false);
+  }, [editingEvent?.id, editingEvent?.allDay]);
+
+  /**
+   * Reset the form after successfully creating an event.
+   */
   useEffect(() => {
     if (!isEditing && state.ok) {
       formRef.current?.reset();
 
-      const dateInput = formRef.current?.elements.namedItem("date") as HTMLInputElement | null;
+      setAllDay(false);
+
+      const dateInput = formRef.current?.elements.namedItem(
+        "date"
+      ) as HTMLInputElement | null;
+
       if (dateInput) {
         dateInput.value = defaultDate;
       }
@@ -102,7 +125,6 @@ export function EventFormClient({
 
     setVisibleMessage(state.message);
 
-    // Only auto-hide success/info messages
     if (state.ok) {
       const timer = window.setTimeout(() => {
         setVisibleMessage("");
@@ -112,6 +134,9 @@ export function EventFormClient({
     }
   }, [state.message, state.ok]);
 
+  /**
+   * Scroll to and focus the form when editing an event.
+   */
   useEffect(() => {
     if (!editingEvent?.id) return;
 
@@ -137,8 +162,11 @@ export function EventFormClient({
           <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-100">
             {isEditing ? "Edit event" : "Add event"}
           </h2>
+
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            {isEditing ? "Update the selected event." : "Quick event entry for mobile and desktop."}
+            {isEditing
+              ? "Update the selected event."
+              : "Quick event entry for mobile and desktop."}
           </p>
         </div>
 
@@ -152,13 +180,18 @@ export function EventFormClient({
         ) : null}
       </div>
 
-      <form ref={formRef} action={formAction} className="space-y-3 overflow-x-hidden">
+      <form
+        ref={formRef}
+        action={formAction}
+        className="space-y-3 overflow-x-hidden"
+      >
         {isEditing ? (
           <input type="hidden" name="eventId" value={editingEvent!.id} />
         ) : null}
 
         <input type="hidden" name="returnTo" value={returnTo} />
 
+        {/* Title */}
         <div className="w-full min-w-0 max-w-full">
           <input
             ref={titleInputRef}
@@ -170,6 +203,7 @@ export function EventFormClient({
           />
         </div>
 
+        {/* Description */}
         <div className="w-full min-w-0 max-w-full">
           <textarea
             name="description"
@@ -180,60 +214,139 @@ export function EventFormClient({
           />
         </div>
 
+        {/* Date and time */}
         <div className="space-y-3">
+          {/* Date */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label
+              htmlFor="event-date"
+              className="text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
               Date
             </label>
+
             <div className="w-full overflow-hidden">
               <input
+                id="event-date"
                 name="date"
                 type="date"
                 defaultValue={dateValue}
                 required
-                className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="
+                  block w-full min-w-0 max-w-full appearance-none
+                  rounded-xl border border-slate-300 bg-white
+                  px-4 py-3 text-base text-slate-950
+                  outline-none
+                  focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20
+                  dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100
+                "
               />
             </div>
           </div>
 
+          {/* Start time */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label
+              htmlFor="event-start-time"
+              className={`text-sm font-medium transition-colors ${
+                allDay
+                  ? "text-slate-400 dark:text-slate-600"
+                  : "text-slate-700 dark:text-slate-300"
+              }`}
+            >
               Start time
+              {!allDay ? <span className="ml-1 text-red-500">*</span> : null}
             </label>
+
             <div className="w-full overflow-hidden">
               <input
+                id="event-start-time"
                 name="startTime"
                 type="time"
                 defaultValue={startTimeValue}
-                className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                disabled={allDay}
+                required={!allDay}
+                className="
+                  block w-full min-w-0 max-w-full appearance-none
+                  rounded-xl border border-slate-300 bg-white
+                  px-4 py-3 text-base text-slate-900
+                  outline-none
+                  focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20
+                  disabled:cursor-not-allowed
+                  disabled:border-slate-200
+                  disabled:bg-slate-100
+                  disabled:text-slate-400
+                  disabled:opacity-70
+                  dark:border-slate-700
+                  dark:bg-slate-950
+                  dark:text-slate-100
+                  dark:disabled:border-slate-800
+                  dark:disabled:bg-slate-900
+                  dark:disabled:text-slate-600
+                "
               />
             </div>
           </div>
 
+          {/* End time */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label
+              htmlFor="event-end-time"
+              className={`text-sm font-medium transition-colors ${
+                allDay
+                  ? "text-slate-400 dark:text-slate-600"
+                  : "text-slate-700 dark:text-slate-300"
+              }`}
+            >
               End time
+              {!allDay ? <span className="ml-1 text-red-500">*</span> : null}
             </label>
+
             <div className="w-full overflow-hidden">
               <input
+                id="event-end-time"
                 name="endTime"
                 type="time"
                 defaultValue={endTimeValue}
-                className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                disabled={allDay}
+                required={!allDay}
+                className="
+                  block w-full min-w-0 max-w-full appearance-none
+                  rounded-xl border border-slate-300 bg-white
+                  px-4 py-3 text-base text-slate-900
+                  outline-none
+                  focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20
+                  disabled:cursor-not-allowed
+                  disabled:border-slate-200
+                  disabled:bg-slate-100
+                  disabled:text-slate-400
+                  disabled:opacity-70
+                  dark:border-slate-700
+                  dark:bg-slate-950
+                  dark:text-slate-100
+                  dark:disabled:border-slate-800
+                  dark:disabled:bg-slate-900
+                  dark:disabled:text-slate-600
+                "
               />
             </div>
           </div>
         </div>
 
-        <label className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:text-slate-300">
+        {/* All-day */}
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:text-slate-300">
           <input
             type="checkbox"
             name="allDay"
-            defaultChecked={editingEvent?.allDay ?? false}
+            checked={allDay}
+            onChange={(event) => setAllDay(event.target.checked)}
+            className="h-5 w-5 rounded border-slate-300"
           />
-          All-day event
+
+          <span>All-day event</span>
         </label>
 
+        {/* Category / assigned user */}
         <div className="space-y-3 sm:grid sm:min-w-0 sm:grid-cols-2 sm:gap-3 sm:space-y-0">
           <div className="w-full min-w-0 max-w-full">
             <select
@@ -242,6 +355,7 @@ export function EventFormClient({
               className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             >
               <option value="">No category</option>
+
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -257,6 +371,7 @@ export function EventFormClient({
               className="block w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             >
               <option value="">Unassigned</option>
+
               {users.map((user) => (
                 <option key={user.id} value={user.id}>
                   {user.name}
@@ -266,6 +381,7 @@ export function EventFormClient({
           </div>
         </div>
 
+        {/* Result message */}
         {visibleMessage ? (
           <div
             className={`rounded-xl px-4 py-3 text-sm ${
@@ -278,6 +394,7 @@ export function EventFormClient({
           </div>
         ) : null}
 
+        {/* Submit */}
         <div>
           <ActionButton
             variant="primary"

@@ -46,8 +46,8 @@ const baseEventSchema = z.object({
   title: z.string().trim().min(1, "Title is required."),
   description: z.string().nullable(),
   date: z.string().trim().min(1, "Date is required."),
-  startTime: z.string().nullable(),
-  endTime: z.string().nullable(),
+  startTime: z.string().nullable().optional(),
+  endTime: z.string().nullable().optional(),
   allDay: z.boolean(),
   categoryId: z.string().nullable(),
   assignedToId: z.string().nullable(),
@@ -94,18 +94,31 @@ export async function createEventAction(
       startAt = startOfDayLocal(date);
       endAt = endOfDayLocal(date);
     } else {
-      startAt = combineDateAndTime(date, startTime);
-
-      if (!startAt) {
+      if (!startTime) {
         return {
           ok: false,
-          message: "Start time is required for non all-day events.",
+          message: "Start time is required for non-all-day events.",
         };
       }
 
+      if (!endTime) {
+        return {
+          ok: false,
+          message: "End time is required for non-all-day events.",
+        };
+      }
+
+      startAt = combineDateAndTime(date, startTime);
       endAt = combineDateAndTime(date, endTime);
 
-      if (endAt && endAt < startAt) {
+      if (!startAt || !endAt) {
+        return {
+          ok: false,
+          message: "Invalid start or end time.",
+        };
+      }
+
+      if (endAt < startAt) {
         return {
           ok: false,
           message: "End time cannot be earlier than start time.",
@@ -186,18 +199,31 @@ export async function updateEventAction(
       startAt = startOfDayLocal(date);
       endAt = endOfDayLocal(date);
     } else {
-      startAt = combineDateAndTime(date, startTime);
-
-      if (!startAt) {
+      if (!startTime) {
         return {
           ok: false,
-          message: "Start time is required for non all-day events.",
+          message: "Start time is required for non-all-day events.",
         };
       }
 
+      if (!endTime) {
+        return {
+          ok: false,
+          message: "End time is required for non-all-day events.",
+        };
+      }
+
+      startAt = combineDateAndTime(date, startTime);
       endAt = combineDateAndTime(date, endTime);
 
-      if (endAt && endAt < startAt) {
+      if (!startAt || !endAt) {
+        return {
+          ok: false,
+          message: "Invalid start or end time.",
+        };
+      }
+
+      if (endAt < startAt) {
         return {
           ok: false,
           message: "End time cannot be earlier than start time.",
