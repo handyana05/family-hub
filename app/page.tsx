@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   CalendarDays,
   CheckSquare,
@@ -57,9 +58,14 @@ export default async function HomePage() {
             href="/"
             className="flex items-center gap-3 font-semibold tracking-tight"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <span className="text-xl">♡</span>
-            </div>
+            <Image
+              src="/icons/icon-192.png"
+              alt="Family Hub"
+              width={40}
+              height={40}
+              priority
+              className="h-10 w-10"
+            />
 
             <span className="text-lg sm:text-xl">
               Family Hub
